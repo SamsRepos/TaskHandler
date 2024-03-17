@@ -3,6 +3,8 @@ import subprocess
 import signal
 import json
 import wx
+import threading
+from time import sleep
 
 def prompt_yn(prompt):
   prompt += " Y/N:"
@@ -56,7 +58,17 @@ class Task:
     self.process.kill()
     self.running = False
 
+  def check_running(self):
+    if self.running:
+      poll_res = self.process.poll()
+      if poll_res != None:
+        self.running = False
+
 tasks = []
+
+def check_tasks_running():
+  for task in tasks:
+    task.check_running()
 
 JSON_TASKS_NAME = "tasks"
 JSON_NAME_KEY   = 'name'
@@ -142,6 +154,11 @@ class TaskTool:
       cmd = task.cmd
       cwd = task.cwd
       self.info_label.SetLabel(f'{name} not running. (Runs "{cmd}" at {cwd})')
+
+  def update(self):
+    self.update_info_label()
+    self.run_button.Enable(self.task.running == False)
+    self.kill_button.Enable(self.task.running == True)
       
 
 class GuiPanel(wx.Panel):
@@ -192,11 +209,41 @@ class GuiPanel(wx.Panel):
     else:
       self.run_all_button.Disable()
 
+  def update_all(self):
+    self.update_top_buttons()
+    for task_tool in self.task_tools:
+      task_tool.update()
+
+gui_running = False
+
 class GuiFrame(wx.Frame):
 
   def __init__(self):
     super().__init__(None, title="Tasks", pos=(50, 60), size=(850, 150))
-    panel = GuiPanel(self)
+    self.panel = GuiPanel(self)
+    global gui_running
+    gui_running = True
+    self.Bind(wx.EVT_CLOSE, self.on_close)
+  
+  def on_close(self, event):
+    global gui_running
+    gui_running = False
+    self.Destroy()
+    
+
+SECONDS_BETWEEN_TASKS_CHECK = 0.5
+
+def main_loop(frame):
+  while gui_running:
+    check_tasks_running()
+    wx.CallAfter(frame.panel.update_all)
+    sleep(SECONDS_BETWEEN_TASKS_CHECK)
+
+
+def start_thread(func, *args):
+  thread = threading.Thread(target=func, args=args)
+  thread.daemon = True
+  thread.start()
 
 
 if __name__ == '__main__':
@@ -211,9 +258,11 @@ if __name__ == '__main__':
 
   app = wx.App()
   frame = GuiFrame()
+  start_thread(main_loop, frame)
   frame.Show()
   app.MainLoop()
-  
+
+  check_tasks_running()  
   if any(task.running for task in tasks):
     if prompt_yn("Kill all?"):
       for task in tasks:
