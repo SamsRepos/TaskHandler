@@ -1,0 +1,14 @@
+{
+  "tasks": [
+    {
+      "name": "Battery Alerter",
+      "cmd": "python battery_alerter.py",
+      "cwd": "C:\\Python_Tools\\BatteryAlerter"
+    },
+	  {
+      "name": "Reconnecter",
+      "cmd": "python reconnecter.py",
+      "cwd": "C:\\Python_Tools\\Reconnecter"
+    }
+  ]
+}
