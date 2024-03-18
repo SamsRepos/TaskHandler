@@ -5,6 +5,14 @@ import json
 import wx
 import threading
 from time import sleep
+import win32gui
+import win32con
+import win32api
+
+def start_thread(func, *args):
+  thread = threading.Thread(target=func, args=args)
+  thread.daemon = True
+  thread.start()
 
 def prompt_yn(prompt):
   prompt += " Y/N:"
@@ -28,6 +36,11 @@ class CwdStack:
 
 cwd_stack = CwdStack()
 
+SW_MINIMISE = 6
+task_startupinfo             = subprocess.STARTUPINFO()
+task_startupinfo.dwFlags     = subprocess.STARTF_USESHOWWINDOW
+task_startupinfo.wShowWindow = SW_MINIMISE
+
 class Task:
   def __init__(self, name, cmd, cwd):
     self.name    = name
@@ -36,17 +49,12 @@ class Task:
     self.running = False
 
   def start(self):
-    SW_MINIMISE = 6
-    info = subprocess.STARTUPINFO()
-    info.dwFlags = subprocess.STARTF_USESHOWWINDOW
-    info.wShowWindow = SW_MINIMISE
-
     print(f"Preparing to start task: {self.name}")
     print(f" - Setting cwd to: {self.cwd}")
     cwd_stack.push(self.cwd)
     print(f" - cwd set to: {os.getcwd()}")
     print(f" - command: {self.cmd}")
-    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=info)
+    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=task_startupinfo)
     print(f" - task started, pid: {self.process.pid}")
     cwd_stack.pop()
     print(f" - cwd restored to: {os.getcwd()}")
@@ -84,19 +92,6 @@ with open( "tasks.json") as tasks_json_file:
       cwd=task_data[JSON_CWD_KEY]
     )
     tasks.append(task)
-
-
-# battery_name = "Battery Alerter"
-# battery_cwd = r'C:\Python_Tools\BatteryAlerter'
-# battery_cmd = 'python battery_alerter.py' # r'b.bat'
-# battery_task = Task(name=battery_name, cmd=battery_cmd, cwd=battery_cwd)
-# tasks.append(battery_task)
-
-# reconnecter_name = "Reconnecter"
-# reconnecter_cwd = r'C:\Python_Tools\Reconnecter'
-# reconnecter_cmd = r'python reconnecter.py' # r'r.bat'
-# reconnecter_task = Task(name=reconnecter_name, cmd=reconnecter_cmd, cwd=reconnecter_cwd)
-# tasks.append(reconnecter_task)
 
 
 class TaskTool:
@@ -240,22 +235,7 @@ def main_loop(frame):
     sleep(SECONDS_BETWEEN_TASKS_CHECK)
 
 
-def start_thread(func, *args):
-  thread = threading.Thread(target=func, args=args)
-  thread.daemon = True
-  thread.start()
-
-
 if __name__ == '__main__':
-
-  # if prompt_yn("Start all tasks?"):
-  #   for task in tasks:
-  #     task.start()
-  # else:
-  #   for task in tasks:
-  #     if prompt_yn(f"Start {task.name}?"):
-  #       task.start()
-
   app = wx.App()
   frame = GuiFrame()
   start_thread(main_loop, frame)
@@ -264,6 +244,10 @@ if __name__ == '__main__':
 
   check_tasks_running()  
   if any(task.running for task in tasks):
+    print("Tasks still running: ")
+    for task in tasks:
+      if task.running:
+        print(f"  - {task.name} - pid:{task.process.pid}")
     if prompt_yn("Kill all?"):
       for task in tasks:
         task.kill()

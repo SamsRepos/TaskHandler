@@ -1,1 +1,1 @@
-python task_handler.py
+start python task_handler.py
