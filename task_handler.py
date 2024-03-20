@@ -1,13 +1,9 @@
 import os
 import subprocess
-import signal
 import json
 import wx
 import threading
 from time import sleep
-import win32gui
-import win32con
-import win32api
 
 def start_thread(func, *args):
   thread = threading.Thread(target=func, args=args)
@@ -63,14 +59,21 @@ class Task:
     return self.process
   
   def kill(self):
+    print(f"Preparing to kill task: {self.name}, pid: {self.process.pid}")
     self.process.kill()
     self.running = False
+    print(f" - task killed")
+    print()
+    
 
   def check_running(self):
     if self.running:
       poll_res = self.process.poll()
       if poll_res != None:
         self.running = False
+        print(f"Task ended: {self.name}")
+        print(f" - Final output: {poll_res}")
+        print()
 
 tasks = []
 
