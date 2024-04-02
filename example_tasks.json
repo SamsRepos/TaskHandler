@@ -3,12 +3,14 @@
     {
       "name": "Battery Alerter",
       "cmd": "python battery_alerter.py",
-      "cwd": "C:\\Python_Tools\\BatteryAlerter"
+      "cwd": "C:\\Python_Tools\\BatteryAlerter",
+      "active": true
     },
 	  {
       "name": "Reconnecter",
       "cmd": "python reconnecter.py",
-      "cwd": "C:\\Python_Tools\\Reconnecter"
+      "cwd": "C:\\Python_Tools\\Reconnecter",
+      "active": false
     }
   ]
 }

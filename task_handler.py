@@ -81,20 +81,24 @@ def check_tasks_running():
   for task in tasks:
     task.check_running()
 
+JSON_FILE_PATH = 'tasks.json'
+
 JSON_TASKS_NAME = "tasks"
 JSON_NAME_KEY   = 'name'
 JSON_CMD_KEY    = 'cmd'
 JSON_CWD_KEY    = 'cwd'
+JSON_ACTIVE_KEY = 'active'
 
-with open( "tasks.json") as tasks_json_file:
+with open(JSON_FILE_PATH) as tasks_json_file:
   tasks_data = json.load(tasks_json_file)
   for task_data in tasks_data[JSON_TASKS_NAME]:
-    task = Task(
-      name=task_data[JSON_NAME_KEY],
-      cmd=task_data[JSON_CMD_KEY],
-      cwd=task_data[JSON_CWD_KEY]
-    )
-    tasks.append(task)
+    if task_data[JSON_ACTIVE_KEY]:
+      task = Task(
+        name=task_data[JSON_NAME_KEY],
+        cmd=task_data[JSON_CMD_KEY],
+        cwd=task_data[JSON_CWD_KEY]
+      )
+      tasks.append(task)
 
 
 class TaskTool:
