@@ -4,6 +4,17 @@ import json
 import wx
 import threading
 from time import sleep
+from datetime import datetime
+
+def datetime_formatted(dt):
+  #return dt.strftime('%H:%M:%S %d/%m/%Y')
+  return dt.strftime('%d/%m/%Y, %H:%M:%S')
+
+def console_output(str=""):
+  if str != "":
+    print(f"{datetime_formatted(datetime.now())}: {str}")
+  else:
+    print()
 
 def start_thread(func, *args):
   thread = threading.Thread(target=func, args=args)
@@ -45,25 +56,25 @@ class Task:
     self.running = False
 
   def start(self):
-    print(f"Preparing to start task: {self.name}")
-    print(f" - Setting cwd to: {self.cwd}")
+    console_output(f"Preparing to start task: {self.name}")
+    console_output(f" - Setting cwd to: {self.cwd}")
     cwd_stack.push(self.cwd)
-    print(f" - cwd set to: {os.getcwd()}")
-    print(f" - command: {self.cmd}")
+    console_output(f" - cwd set to: {os.getcwd()}")
+    console_output(f" - command: {self.cmd}")
     self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=task_startupinfo)
-    print(f" - task started, pid: {self.process.pid}")
+    console_output(f" - task started, pid: {self.process.pid}")
     cwd_stack.pop()
-    print(f" - cwd restored to: {os.getcwd()}")
-    print()
+    console_output(f" - cwd restored to: {os.getcwd()}")
+    console_output()
     self.running = True
     return self.process
   
   def kill(self):
-    print(f"Preparing to kill task: {self.name}, pid: {self.process.pid}")
+    console_output(f"Preparing to kill task: {self.name}, pid: {self.process.pid}")
     self.process.kill()
     self.running = False
-    print(f" - task killed")
-    print()
+    console_output(f" - task killed")
+    console_output()
     
 
   def check_running(self):
@@ -71,9 +82,9 @@ class Task:
       poll_res = self.process.poll()
       if poll_res != None:
         self.running = False
-        print(f"Task ended: {self.name}")
-        print(f" - Final output: {poll_res}")
-        print()
+        console_output(f"Task ended: {self.name}")
+        console_output(f" - Final output: {poll_res}")
+        console_output()
 
 tasks = []
 
@@ -251,10 +262,10 @@ if __name__ == '__main__':
 
   check_tasks_running()  
   if any(task.running for task in tasks):
-    print("Tasks still running: ")
+    console_output("Tasks still running: ")
     for task in tasks:
       if task.running:
-        print(f"  - {task.name} - pid:{task.process.pid}")
+        console_output(f"  - {task.name} - pid:{task.process.pid}")
     if prompt_yn("Kill all?"):
       for task in tasks:
         task.kill()
