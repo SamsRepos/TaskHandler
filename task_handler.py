@@ -43,17 +43,24 @@ class CwdStack:
 
 cwd_stack = CwdStack()
 
+# https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
 SW_MINIMISE = 6
-task_startupinfo             = subprocess.STARTUPINFO()
-task_startupinfo.dwFlags     = subprocess.STARTF_USESHOWWINDOW
-task_startupinfo.wShowWindow = SW_MINIMISE
+task_startupinfo_minimised             = subprocess.STARTUPINFO()
+task_startupinfo_minimised.dwFlags     = subprocess.STARTF_USESHOWWINDOW
+task_startupinfo_minimised.wShowWindow = SW_MINIMISE
+
+SW_NORMAL = 1
+task_startupinfo_normal             = subprocess.STARTUPINFO()
+task_startupinfo_normal.dwFlags     = subprocess.STARTF_USESHOWWINDOW
+task_startupinfo_normal.wShowWindow = SW_NORMAL
 
 class Task:
-  def __init__(self, name, cmd, cwd):
+  def __init__(self, name, cmd, cwd, start_minimised=True):
     self.name    = name
     self.cmd     = cmd
     self.cwd     = cwd
     self.running = False
+    self.task_startupinfo = task_startupinfo_minimised if start_minimised else task_startupinfo_normal
 
   def start(self):
     console_output(f"Preparing to start task: {self.name}")
@@ -61,7 +68,7 @@ class Task:
     cwd_stack.push(self.cwd)
     console_output(f" - cwd set to: {os.getcwd()}")
     console_output(f" - command: {self.cmd}")
-    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=task_startupinfo)
+    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=self.task_startupinfo)
     console_output(f" - task started, pid: {self.process.pid}")
     cwd_stack.pop()
     console_output(f" - cwd restored to: {os.getcwd()}")
@@ -94,11 +101,12 @@ def check_tasks_running():
 
 JSON_FILE_PATH = 'tasks.json'
 
-JSON_TASKS_NAME = "tasks"
-JSON_NAME_KEY   = 'name'
-JSON_CMD_KEY    = 'cmd'
-JSON_CWD_KEY    = 'cwd'
-JSON_ACTIVE_KEY = 'active'
+JSON_TASKS_NAME          = "tasks"
+JSON_NAME_KEY            = 'name'
+JSON_CMD_KEY             = 'cmd'
+JSON_CWD_KEY             = 'cwd'
+JSON_ACTIVE_KEY          = 'active'
+JSON_START_MINIMISED_KEY = 'start_minimised'
 
 with open(JSON_FILE_PATH) as tasks_json_file:
   tasks_data = json.load(tasks_json_file)
@@ -107,7 +115,8 @@ with open(JSON_FILE_PATH) as tasks_json_file:
       task = Task(
         name=task_data[JSON_NAME_KEY],
         cmd=task_data[JSON_CMD_KEY],
-        cwd=task_data[JSON_CWD_KEY]
+        cwd=task_data[JSON_CWD_KEY],
+        start_minimised=task_data[JSON_START_MINIMISED_KEY]
       )
       tasks.append(task)
 

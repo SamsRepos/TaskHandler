@@ -4,13 +4,22 @@
       "name": "Battery Alerter",
       "cmd": "python battery_alerter.py",
       "cwd": "C:\\Python_Tools\\BatteryAlerter",
-      "active": true
+      "active": true,
+      "start_minimised": true
     },
 	  {
       "name": "Reconnecter",
       "cmd": "python reconnecter.py",
       "cwd": "C:\\Python_Tools\\Reconnecter",
-      "active": false
+      "active": true,
+      "start_minimised": true
+    },
+    {
+      "name": "AZB testing",
+      "cmd": "python azb.py run_once",
+      "cwd": "C:\\Python_Tools\\AutoZipBackup",
+      "active": true,
+      "start_minimised": false
     }
   ]
 }
