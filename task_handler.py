@@ -44,31 +44,62 @@ class CwdStack:
 cwd_stack = CwdStack()
 
 # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
-SW_MINIMISE = 6
-task_startupinfo_minimised             = subprocess.STARTUPINFO()
-task_startupinfo_minimised.dwFlags     = subprocess.STARTF_USESHOWWINDOW
-task_startupinfo_minimised.wShowWindow = SW_MINIMISE
+SW_HIDE            =  0
+SW_NORMAL          =  1
+SW_SHOWMINIMISED   =  2
+SW_MAXIMISE        =  3
+SW_SHOWNOACTIVATE  =  4
+SW_SHOW            =  5
+SW_MINIMISE        =  6
+SW_SHOWMINNOACTIVE =  7
+SW_SHOWNA          =  8
+SW_RESTORE         =  9
+SW_SHOWDEFAULT     = 10
+SW_FORCEMINIMISE   = 11
 
-SW_NORMAL = 1
-task_startupinfo_normal             = subprocess.STARTUPINFO()
-task_startupinfo_normal.dwFlags     = subprocess.STARTF_USESHOWWINDOW
-task_startupinfo_normal.wShowWindow = SW_NORMAL
+# for settings:
+NO_WINDOW       = 0
+START_MINIMISED = 1
+START_NORMAL    = 2
+START_MAXIMISED = 3
+
+
+WINDOW_SETTING_TO_SW_CODE = {
+  NO_WINDOW:       SW_HIDE,
+  START_MINIMISED: SW_MINIMISE,
+  START_NORMAL:    SW_NORMAL,
+  START_MAXIMISED: SW_MAXIMISE
+}
+
+WINDOW_SETTINGS_CHOICES = [
+  "no window",
+  "start minimised",
+  "start normal",
+  "start maximised"
+]
+
+tasks_startupinfo = subprocess.STARTUPINFO()
+tasks_startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
 
 class Task:
-  def __init__(self, name, cmd, cwd, start_minimised=True):
-    self.name    = name
-    self.cmd     = cmd
-    self.cwd     = cwd
-    self.running = False
-    self.task_startupinfo = task_startupinfo_minimised if start_minimised else task_startupinfo_normal
+  def __init__(self, name, cmd, cwd, default_window_setting):
+    self.name                   = name
+    self.cmd                    = cmd
+    self.cwd                    = cwd
+    self.default_window_setting = default_window_setting
+    self.running                = False
 
-  def start(self):
+  def start(self, window_setting):
     console_output(f"Preparing to start task: {self.name}")
     console_output(f" - Setting cwd to: {self.cwd}")
     cwd_stack.push(self.cwd)
     console_output(f" - cwd set to: {os.getcwd()}")
     console_output(f" - command: {self.cmd}")
-    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=self.task_startupinfo)
+
+    startupinfo = tasks_startupinfo
+    startupinfo.wShowWindow = WINDOW_SETTING_TO_SW_CODE[window_setting]
+
+    self.process = subprocess.Popen(self.cmd, cwd=self.cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=startupinfo)
     console_output(f" - task started, pid: {self.process.pid}")
     cwd_stack.pop()
     console_output(f" - cwd restored to: {os.getcwd()}")
@@ -101,12 +132,12 @@ def check_tasks_running():
 
 JSON_FILE_PATH = 'tasks.json'
 
-JSON_TASKS_NAME          = "tasks"
-JSON_NAME_KEY            = 'name'
-JSON_CMD_KEY             = 'cmd'
-JSON_CWD_KEY             = 'cwd'
-JSON_ACTIVE_KEY          = 'active'
-JSON_START_MINIMISED_KEY = 'start_minimised'
+JSON_TASKS_NAME               = "tasks"
+JSON_NAME_KEY                 = 'name'
+JSON_CMD_KEY                  = 'cmd'
+JSON_CWD_KEY                  = 'cwd'
+JSON_ACTIVE_KEY               = 'active'
+JSON_START_WINDOW_SETTING_KEY = 'default_window_setting'
 
 with open(JSON_FILE_PATH) as tasks_json_file:
   tasks_data = json.load(tasks_json_file)
@@ -116,7 +147,7 @@ with open(JSON_FILE_PATH) as tasks_json_file:
         name=task_data[JSON_NAME_KEY],
         cmd=task_data[JSON_CMD_KEY],
         cwd=task_data[JSON_CWD_KEY],
-        start_minimised=task_data[JSON_START_MINIMISED_KEY]
+        default_window_setting=task_data[JSON_START_WINDOW_SETTING_KEY]
       )
       tasks.append(task)
 
@@ -136,10 +167,18 @@ class TaskTool:
     self.kill_button.Bind(wx.EVT_BUTTON, self.on_click_kill)
     self.kill_button.Enable(task.running == True)
 
+    self.start_mode_combo = wx.ComboBox(
+      panel,
+      style=wx.CB_READONLY,
+      choices=WINDOW_SETTINGS_CHOICES
+    )
+    self.start_mode_combo.SetSelection(task.default_window_setting)
+
     self.info_label = wx.StaticText(panel)
     self.update_info_label()
 
     self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+    self.sizer.Add(self.start_mode_combo)
     self.sizer.Add(self.run_button)
     self.sizer.Add(self.kill_button)
     self.sizer.Add(self.info_label)
@@ -154,7 +193,7 @@ class TaskTool:
 
   def run(self):
     if self.task.running == False:
-      self.task.start()
+      self.task.start(self.start_mode_combo.GetSelection())
       self.run_button.Disable()
       self.kill_button.Enable()
       self.update_info_label()
@@ -241,7 +280,7 @@ gui_running = False
 class GuiFrame(wx.Frame):
 
   def __init__(self):
-    super().__init__(None, title="Tasks", pos=(50, 60), size=(850, 150))
+    super().__init__(None, title="Tasks", pos=(50, 60), size=(950, 250))
     self.panel = GuiPanel(self)
     global gui_running
     gui_running = True
