@@ -70,7 +70,7 @@ WINDOW_SETTINGS_CHOICES = [
   "start maximised"
 ]
 
-RUN_ALL_TASK_DEFAULT = 0
+RUN_ALL_DELEGATE     = 0
 RUN_ALL_NO_WINDOW    = 1
 RUN_ALL_MINIMISED    = 2
 RUN_ALL_NORMAL       = 3
@@ -84,7 +84,7 @@ RUN_ALL_WINDOW_SETTING_TO_WINDOW_SETTING = {
 }
 
 RUN_ALL_WINDOW_SETTINGS_CHOICES = [
-  "task default",
+  "delegate",
   "no window",
   "start minimised",
   "start normal",
@@ -212,8 +212,8 @@ class TaskTool:
     self.kill()
     self.panel.update_top_buttons()
 
-  def run(self, run_all_start_mode=RUN_ALL_TASK_DEFAULT):
-    if run_all_start_mode == RUN_ALL_TASK_DEFAULT:
+  def run(self, run_all_start_mode=RUN_ALL_DELEGATE):
+    if run_all_start_mode == RUN_ALL_DELEGATE:
       start_mode = self.start_mode_combo.GetSelection()
     else:
       start_mode = RUN_ALL_WINDOW_SETTING_TO_WINDOW_SETTING[run_all_start_mode]
@@ -231,7 +231,7 @@ class TaskTool:
       self.run_button.Enable()
       self.start_mode_combo.Enable()
       self.kill_button.Disable()
-      self.update_info_label()    
+      self.update_info_label()
   
   def update_info_label(self):
     task = self.task
@@ -247,6 +247,7 @@ class TaskTool:
   def update(self):
     self.update_info_label()
     self.run_button.Enable(self.task.running == False)
+    self.start_mode_combo.Enable(self.task.running == False)
     self.kill_button.Enable(self.task.running == True)
       
 
