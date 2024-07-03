@@ -63,6 +63,34 @@ START_MINIMISED = 1
 START_NORMAL    = 2
 START_MAXIMISED = 3
 
+WINDOW_SETTINGS_CHOICES = [
+  "no window",
+  "start minimised",
+  "start normal",
+  "start maximised"
+]
+
+RUN_ALL_TASK_DEFAULT = 0
+RUN_ALL_NO_WINDOW    = 1
+RUN_ALL_MINIMISED    = 2
+RUN_ALL_NORMAL       = 3
+RUN_ALL_MAXIMISED    = 4
+
+RUN_ALL_WINDOW_SETTING_TO_WINDOW_SETTING = {
+  RUN_ALL_NO_WINDOW: NO_WINDOW,
+  RUN_ALL_MINIMISED: START_MINIMISED,
+  RUN_ALL_NORMAL: START_NORMAL,
+  RUN_ALL_MAXIMISED: START_MAXIMISED
+}
+
+RUN_ALL_WINDOW_SETTINGS_CHOICES = [
+  "task default",
+  "no window",
+  "start minimised",
+  "start normal",
+  "start maximised"
+]
+
 
 WINDOW_SETTING_TO_SW_CODE = {
   NO_WINDOW:       SW_HIDE,
@@ -70,13 +98,6 @@ WINDOW_SETTING_TO_SW_CODE = {
   START_NORMAL:    SW_NORMAL,
   START_MAXIMISED: SW_MAXIMISE
 }
-
-WINDOW_SETTINGS_CHOICES = [
-  "no window",
-  "start minimised",
-  "start normal",
-  "start maximised"
-]
 
 tasks_startupinfo = subprocess.STARTUPINFO()
 tasks_startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
@@ -158,6 +179,13 @@ class TaskTool:
     self.task = task
 
     self.panel = panel
+
+    self.start_mode_combo = wx.ComboBox(
+      panel,
+      style=wx.CB_READONLY,
+      choices=WINDOW_SETTINGS_CHOICES
+    )
+    self.start_mode_combo.SetSelection(task.default_window_setting)
     
     self.run_button = wx.Button(panel, label=f"Run {task.name}")
     self.run_button.Bind(wx.EVT_BUTTON, self.on_click_run)
@@ -166,13 +194,6 @@ class TaskTool:
     self.kill_button = wx.Button(panel, label=f"Kill {task.name}")
     self.kill_button.Bind(wx.EVT_BUTTON, self.on_click_kill)
     self.kill_button.Enable(task.running == True)
-
-    self.start_mode_combo = wx.ComboBox(
-      panel,
-      style=wx.CB_READONLY,
-      choices=WINDOW_SETTINGS_CHOICES
-    )
-    self.start_mode_combo.SetSelection(task.default_window_setting)
 
     self.info_label = wx.StaticText(panel)
     self.update_info_label()
@@ -191,10 +212,16 @@ class TaskTool:
     self.kill()
     self.panel.update_top_buttons()
 
-  def run(self):
+  def run(self, run_all_start_mode=RUN_ALL_TASK_DEFAULT):
+    if run_all_start_mode == RUN_ALL_TASK_DEFAULT:
+      start_mode = self.start_mode_combo.GetSelection()
+    else:
+      start_mode = RUN_ALL_WINDOW_SETTING_TO_WINDOW_SETTING[run_all_start_mode]
+
     if self.task.running == False:
-      self.task.start(self.start_mode_combo.GetSelection())
+      self.task.start(start_mode)
       self.run_button.Disable()
+      self.start_mode_combo.Disable()
       self.kill_button.Enable()
       self.update_info_label()
 
@@ -202,6 +229,7 @@ class TaskTool:
     if self.task.running == True:
       self.task.kill()
       self.run_button.Enable()
+      self.start_mode_combo.Enable()
       self.kill_button.Disable()
       self.update_info_label()    
   
@@ -230,6 +258,15 @@ class GuiPanel(wx.Panel):
     main_sizer = wx.BoxSizer(wx.VERTICAL)
 
     top_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+    self.run_all_start_mode_combo = wx.ComboBox(
+      self,
+      style=wx.CB_READONLY,
+      choices=RUN_ALL_WINDOW_SETTINGS_CHOICES
+    )
+    self.run_all_start_mode_combo.SetSelection(0)
+    top_sizer.Add(self.run_all_start_mode_combo)
+
     self.run_all_button = wx.Button(self, label="Run All")
     self.run_all_button.Bind(wx.EVT_BUTTON, self.run_all)
     top_sizer.Add(self.run_all_button)
@@ -251,7 +288,7 @@ class GuiPanel(wx.Panel):
 
   def run_all(self, event):
     for task_tool in self.task_tools:
-      task_tool.run()
+      task_tool.run(run_all_start_mode=self.run_all_start_mode_combo.GetSelection())
       self.update_top_buttons()
 
   def kill_all(self, event):
@@ -267,8 +304,10 @@ class GuiPanel(wx.Panel):
     
     if any(task.running == False for task in tasks):
       self.run_all_button.Enable()
+      self.run_all_start_mode_combo.Enable()
     else:
       self.run_all_button.Disable()
+      self.run_all_start_mode_combo.Disable()
 
   def update_all(self):
     self.update_top_buttons()
