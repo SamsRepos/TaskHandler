@@ -3,23 +3,34 @@
     {
       "name": "Battery Alerter",
       "cmd": "python battery_alerter.py",
-      "cwd": "C:\\Python_Tools\\BatteryAlerter",
+      "cwd": "C:\\PythonTools\\BatteryAlerter",
       "active": true,
+      "auto_start": true,
       "default_window_setting": 0
     },
 	  {
       "name": "Reconnecter",
       "cmd": "python reconnecter.py",
-      "cwd": "C:\\Python_Tools\\Reconnecter",
+      "cwd": "C:\\PythonTools\\Reconnecter",
       "active": true,
+      "auto_start": false,
       "default_window_setting": 1
     },
     {
       "name": "AZB",
       "cmd": "python azb.py run_once",
-      "cwd": "C:\\Python_Tools\\AutoZipBackup",
+      "cwd": "C:\\PythonTools\\AutoZipBackup",
       "active": true,
+      "auto_start": false,
       "default_window_setting": 2
+    },
+    {
+      "name": "DAFA",
+      "cmd": "python dafa.py",
+      "cwd": "C:\\PythonTools\\DriveAlmostFullAlerter",
+      "active": true,
+      "auto_start": true,
+      "default_window_setting": 0
     }
   ]
 }

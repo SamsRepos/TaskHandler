@@ -103,12 +103,16 @@ tasks_startupinfo = subprocess.STARTUPINFO()
 tasks_startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
 
 class Task:
-  def __init__(self, name, cmd, cwd, default_window_setting):
+  def __init__(self, name, cmd, cwd, default_window_setting, auto_start):
     self.name                   = name
     self.cmd                    = cmd
     self.cwd                    = cwd
+    self.auto_start             = auto_start
     self.default_window_setting = default_window_setting
     self.running                = False
+
+    if self.auto_start:
+      self.start(self.default_window_setting)
 
   def start(self, window_setting):
     console_output(f"Preparing to start task: {self.name}")
@@ -153,22 +157,24 @@ def check_tasks_running():
 
 JSON_FILE_PATH = 'tasks.json'
 
-JSON_TASKS_NAME               = "tasks"
+JSON_TASKS_KEY                = "tasks"
 JSON_NAME_KEY                 = 'name'
 JSON_CMD_KEY                  = 'cmd'
 JSON_CWD_KEY                  = 'cwd'
 JSON_ACTIVE_KEY               = 'active'
+JSON_AUTO_START_KEY           = 'auto_start'
 JSON_START_WINDOW_SETTING_KEY = 'default_window_setting'
 
 with open(JSON_FILE_PATH) as tasks_json_file:
   tasks_data = json.load(tasks_json_file)
-  for task_data in tasks_data[JSON_TASKS_NAME]:
+  for task_data in tasks_data[JSON_TASKS_KEY]:
     if task_data[JSON_ACTIVE_KEY]:
       task = Task(
         name=task_data[JSON_NAME_KEY],
         cmd=task_data[JSON_CMD_KEY],
         cwd=task_data[JSON_CWD_KEY],
-        default_window_setting=task_data[JSON_START_WINDOW_SETTING_KEY]
+        default_window_setting=task_data[JSON_START_WINDOW_SETTING_KEY],
+        auto_start=task_data[JSON_AUTO_START_KEY]
       )
       tasks.append(task)
 
