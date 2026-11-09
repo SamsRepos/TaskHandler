@@ -1,4 +1,5 @@
 {
+  "gui_window_title": "Tasks",
   "tasks": [
     {
       "name": "Battery Alerter",

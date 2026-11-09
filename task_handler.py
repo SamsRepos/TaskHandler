@@ -149,32 +149,37 @@ class Task:
         console_output(f" - Final output: {poll_res}")
         console_output()
 
+DEFAULT_GUI_WINDOW_TITLE = "Tasks"
+gui_window_title = DEFAULT_GUI_WINDOW_TITLE
+
 tasks = []
 
 def check_tasks_running():
   for task in tasks:
     task.check_running()
 
-JSON_FILE_PATH = 'tasks.json'
+CONFIG_FILE_PATH = 'config.json'
 
-JSON_TASKS_KEY                = "tasks"
-JSON_NAME_KEY                 = 'name'
-JSON_CMD_KEY                  = 'cmd'
-JSON_CWD_KEY                  = 'cwd'
-JSON_ACTIVE_KEY               = 'active'
-JSON_AUTO_START_KEY           = 'auto_start'
-JSON_START_WINDOW_SETTING_KEY = 'default_window_setting'
+CONFIG_WINDOW_TITLE_KEY                = 'gui_window_title'
+CONFIG_TASKS_KEY                       = 'tasks'
+CONFIG_TASK_NAME_KEY                   = 'name'
+CONFIG_TASK_CMD_KEY                    = 'cmd'
+CONFIG_TASK_CWD_KEY                    = 'cwd'
+CONFIG_TASK_ACTIVE_KEY                 = 'active'
+CONFIG_TASK_AUTO_START_KEY             = 'auto_start'
+CONFIG_TASK_DEFAULT_WINDOW_SETTING_KEY = 'default_window_setting'
 
-with open(JSON_FILE_PATH) as tasks_json_file:
-  tasks_data = json.load(tasks_json_file)
-  for task_data in tasks_data[JSON_TASKS_KEY]:
-    if task_data[JSON_ACTIVE_KEY]:
+with open(CONFIG_FILE_PATH) as config_json_file:
+  config_data = json.load(config_json_file)
+  gui_window_title = config_data[CONFIG_WINDOW_TITLE_KEY]
+  for task_data in config_data[CONFIG_TASKS_KEY]:
+    if task_data[CONFIG_TASK_ACTIVE_KEY]:
       task = Task(
-        name=task_data[JSON_NAME_KEY],
-        cmd=task_data[JSON_CMD_KEY],
-        cwd=task_data[JSON_CWD_KEY],
-        default_window_setting=task_data[JSON_START_WINDOW_SETTING_KEY],
-        auto_start=task_data[JSON_AUTO_START_KEY]
+        name=task_data[CONFIG_TASK_NAME_KEY],
+        cmd=task_data[CONFIG_TASK_CMD_KEY],
+        cwd=task_data[CONFIG_TASK_CWD_KEY],
+        default_window_setting=task_data[CONFIG_TASK_DEFAULT_WINDOW_SETTING_KEY],
+        auto_start=task_data[CONFIG_TASK_AUTO_START_KEY]
       )
       tasks.append(task)
 
@@ -326,7 +331,7 @@ gui_running = False
 class GuiFrame(wx.Frame):
 
   def __init__(self):
-    super().__init__(None, title="Tasks", pos=(50, 60), size=(950, 250))
+    super().__init__(None, title=gui_window_title, pos=(50, 60), size=(950, 250))
     self.panel = GuiPanel(self)
     global gui_running
     gui_running = True
